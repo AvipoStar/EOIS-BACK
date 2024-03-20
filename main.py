@@ -27,7 +27,9 @@ app.add_middleware(
     allow_headers=["*"],  # Разрешаем все заголовки
 )
 
-# Другие настройки приложения...
+@app.on_event("shutdown")
+def shutdown_event():
+    print('shutdown')
 
 app.include_router(
     router=project_router,
