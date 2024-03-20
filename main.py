@@ -28,13 +28,6 @@ app.add_middleware(
     allow_headers=["*"],  # Разрешаем все заголовки
 )
 
-# Пример пути к SSL ключу и сертификату
-ssl_key_path = "/SSL/name.key"
-ssl_cert_path = "/SSL/cert.key"
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, ssl_keyfile=ssl_key_path, ssl_certfile=ssl_cert_path)
-
 app.include_router(
     router=project_router,
     prefix='/projects'
@@ -75,3 +68,10 @@ app.include_router(
     router=taskManagerBoard,
     prefix='/taskmanager'
 )
+
+# Пример пути к SSL ключу и сертификату
+ssl_key_path = "/SSL/name.key"
+ssl_cert_path = "/SSL/cert.key"
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000, ssl_keyfile=ssl_key_path, ssl_certfile=ssl_cert_path)
