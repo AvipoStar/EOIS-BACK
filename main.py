@@ -14,6 +14,7 @@ from routers.AuthReg import router as authReg_router
 from routers.firms import router as firm_router
 from routers.timetable import router as timetable_router
 from routers.TaskManagerBoard import router as taskManagerBoard
+from routers.files import router as files
 
 app = FastAPI()
 
@@ -69,9 +70,11 @@ app.include_router(
     prefix='/taskmanager'
 )
 
+app.include_router(
+    router=files,
+    prefix='/files'
+)
+
 # Пример пути к SSL ключу и сертификату
 ssl_key_path = "/SSL/name.key"
 ssl_cert_path = "/SSL/cert.key"
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000, ssl_keyfile=ssl_key_path, ssl_certfile=ssl_cert_path)

@@ -92,6 +92,8 @@ class User(BaseModel):
     profileId: int = None
     studentIsAttachedToFirm: bool = False
     photoPath: str = None
+    login: str = ""
+    password: str = ""
 
 
 class Student(BaseModel):
@@ -115,7 +117,7 @@ class Curator(BaseModel):
     patronymic: str
     bornDate: date = None
     gender: int
-    profile: str
+    profile: int
     photoPath: str
 
 
@@ -162,6 +164,7 @@ class changeLoginPasswordClass(BaseModel):
     id: int
     newLogin: str
     newPassword: str
+    photoPath: str
 
 
 class timetable(BaseModel):
@@ -174,6 +177,9 @@ class Board(BaseModel):
     name: str
     description: str
     coverColor: str
+
+class BoardId(BaseModel):
+    boardId: int
 
 class FirmId(BaseModel):
     firmId: int
@@ -192,6 +198,11 @@ class BoardList(BaseModel):
     serialNumber: int
 
 
+class CreateBoardList(BaseModel):
+    name: str
+    idBoard: int
+    serialNumber: int
+
 class Task(BaseModel):
     id: int
     name: str
@@ -204,7 +215,7 @@ class Task(BaseModel):
     isDone: bool
 
 
-class TaskStatus(BaseModel):
+class TaskPriority(BaseModel):
     id: int
     name: str
     color: str
@@ -227,5 +238,11 @@ class Route(BaseModel):
     path: str
     name: str
 
+class MoveTask(BaseModel):
+    taskId: int
+    newListId: int
+    newSerialNumber: int
 
-
+class MoveList(BaseModel):
+    columnId: int
+    newSerialNumber: int

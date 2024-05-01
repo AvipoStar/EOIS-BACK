@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
+from starlette.responses import JSONResponse
+import os
+
 from Models.models import User, changeLoginPasswordClass, JoinTheCompanyClass, FirmIds, ProfileId, UserId
 from controllers.users import getAllStudents, getAllCurators, createCurator, createStudent, getUserById, \
     changeLoginPassword, getStudentsInFirms, getCuratorsByProfile, check_user_firm_relation, attach_user_to_firm
@@ -57,7 +60,7 @@ def create_Student(user: User):
 
 @router.post('/changeLoginPassword', tags=["User"])
 def change_Login_Password(userData: changeLoginPasswordClass):
-    user = changeLoginPassword(userData.id, userData.newLogin, userData.newPassword)
+    user = changeLoginPassword(userData.id, userData.newLogin, userData.newPassword, userData.photoPath)
     return user
 
 
@@ -66,7 +69,10 @@ def attachUserToFirm(userData: JoinTheCompanyClass):
     user = attach_user_to_firm(userData)
     return user
 
+
 @router.post('/checkUserFirmRelation', tags=["User"])
 def checkUserFirmRelation(userData: UserId):
     user = check_user_firm_relation(userData.userId)
     return user
+
+

@@ -54,15 +54,14 @@ def getCuratorsByProfile(profileIds: List[int], search_query: str = None):
         database="eois"
     )
     cursor = db.cursor()
-    sql1 = "SELECT u.id_user, u.name, u.surname, u.patronymic, u.bornDate, u.gender, p.name_profile, u.photoPath " \
+    sql1 = "SELECT u.id_user, u.name, u.surname, u.patronymic, u.bornDate, u.gender, u.profile, u.photoPath " \
            "FROM user u " \
-           "JOIN profile p ON u.profile = p.id_profile " \
            "WHERE u.profile IN ("
     sql2 = ', '.join(map(str, profileIds))
     sql3 = ")"
     sql = sql1 + sql2 + sql3
     if search_query:
-        sql += " AND (u.name LIKE '%{}%' OR u.surname LIKE '%{}%' OR p.name_profile LIKE '%{}%')".format(search_query,
+        sql += " AND (u.name LIKE '%{}%' OR u.surname LIKE '%{}%')".format(search_query,
                                                                                                          search_query,
                                                                                                          search_query)
     cursor.execute(sql)
@@ -179,8 +178,6 @@ def getUserById(userId: int):
     results = cursor.fetchall()
     db.commit()
 
-    print(results)
-
     sql1 = f"SELECT u.id_user, u.name, u.surname, f.session_id  " \
            f"FROM eois.usertofirmtoprofile AS e " \
            f"JOIN firm f ON f.id_firm = e.id_firm " \
@@ -202,6 +199,7 @@ def getUserById(userId: int):
 
     if len(results) != 0:
         for result in results:
+            print(f'\n--------------{result}')
             user = User(id=result[0],
                         name=result[1],
                         surname=result[2],
@@ -209,12 +207,13 @@ def getUserById(userId: int):
                         bornDate=result[4],
                         roleId=result[5],
                         balance=result[6],
+                        login=result[7],
+                        password=result[8],
                         gender=result[9],
                         profileId=result[10],
                         photoPath=result[11],
                         studentIsAttachedToFirm=studentIsAttachedToFirm
                         )
-            print(f'------ user {user}')
             return user
     else:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -266,7 +265,7 @@ def createStudent(user: User):
     return "Студент успешно создан"
 
 
-def changeLoginPassword(id: int, newLogin: str, newPassword: str):
+def changeLoginPassword(id: int, newLogin: str, newPassword: str, photoPath: str):
     # Подключение к базе данных MySQL
     db = mysql.connector.connect(
         host="localhost",
@@ -277,7 +276,7 @@ def changeLoginPassword(id: int, newLogin: str, newPassword: str):
     # Создание объекта курсора
     cursor = db.cursor()
     # SQL запрос для обновления логина и пароля
-    sql = f"UPDATE user SET login = '{newLogin}', password = '{newPassword}' WHERE id_user = {id};"
+    sql = f"UPDATE user SET login = '{newLogin}', password = '{newPassword}', photoPath = '{photoPath}' WHERE id_user = {id};"
     # Выполнение SQL запроса
     cursor.execute(sql)
     # Подтверждение изменений в базе данных
