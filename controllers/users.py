@@ -62,8 +62,8 @@ def getCuratorsByProfile(profileIds: List[int], search_query: str = None):
     sql = sql1 + sql2 + sql3
     if search_query:
         sql += " AND (u.name LIKE '%{}%' OR u.surname LIKE '%{}%')".format(search_query,
-                                                                                                         search_query,
-                                                                                                         search_query)
+                                                                           search_query,
+                                                                           search_query)
     cursor.execute(sql)
     results = cursor.fetchall()
     users = []
@@ -157,66 +157,61 @@ def getStudentsInFirms(firmIds: List[int]):
 
 
 def getUserById(userId: int):
-    # Подключение к базе данных MySQL
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="eois"
-    )
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        cursor = db.cursor()
 
-    # Создание объекта курсора
-    cursor = db.cursor()
+        sql = f"SELECT * FROM user WHERE id_user = '{userId}';"
+        cursor.execute(sql)
+        results = cursor.fetchall()
 
-    # SQL запрос для выборки всех проектов
-    sql = f"SELECT * FROM user WHERE id_user = '{userId}';"
+        db.commit()
 
-    # Выполнение SQL запроса
-    cursor.execute(sql)
+        sql1 = f"SELECT f.id_firm " \
+               f"FROM eois.usertofirmtoprofile AS e " \
+               f"JOIN firm f ON f.id_firm = e.id_firm " \
+               f"JOIN user u ON u.id_user = e.id_user " \
+               f"JOIN session s ON f.session_id = s.id_session " \
+               f"WHERE e.id_user = {userId} " \
+               f"AND s.date_start <= CURDATE() " \
+               f"AND s.date_end >= CURDATE();"
+        cursor.execute(sql1)
+        res = cursor.fetchall()
 
-    # Получение результатов запроса
-    results = cursor.fetchall()
-    db.commit()
+        attachedFirmId = -1
+        if len(res) > 0:
+            attachedFirmId = res[0][0]
 
-    sql1 = f"SELECT u.id_user, u.name, u.surname, f.session_id  " \
-           f"FROM eois.usertofirmtoprofile AS e " \
-           f"JOIN firm f ON f.id_firm = e.id_firm " \
-           f"JOIN user u ON u.id_user = e.id_user " \
-           f"JOIN session s ON f.session_id = s.id_session " \
-           f"WHERE e.id_user = {userId} " \
-           f"AND s.date_start <= CURDATE() " \
-           f"AND s.date_end >= CURDATE();"
-    cursor.execute(sql1)
-    res = cursor.fetchall()
-    studentIsAttachedToFirm = False
-    if (len(res) > 0):
-        studentIsAttachedToFirm = True
-    cursor.close()
+        cursor.close()
+        db.close()
 
-    # Закрытие соединения с базой данных
-    cursor.close()
-    db.close()
-
-    if len(results) != 0:
-        for result in results:
-            print(f'\n--------------{result}')
-            user = User(id=result[0],
-                        name=result[1],
-                        surname=result[2],
-                        patronymic=result[3] or "",
-                        bornDate=result[4],
-                        roleId=result[5],
-                        balance=result[6],
-                        login=result[7],
-                        password=result[8],
-                        gender=result[9],
-                        profileId=result[10],
-                        photoPath=result[11],
-                        studentIsAttachedToFirm=studentIsAttachedToFirm
+        if len(results) != 0:
+            user = User(id=results[0][0],
+                        name=results[0][1],
+                        surname=results[0][2],
+                        patronymic=results[0][3] or "",
+                        bornDate=results[0][4],
+                        roleId=results[0][5],
+                        balance=results[0][6],
+                        login=results[0][7],
+                        password=results[0][8],
+                        gender=results[0][9],
+                        profileId=results[0][10],
+                        photoPath=results[0][11],
+                        attachedFirmId=attachedFirmId
                         )
             return user
-    else:
-        raise HTTPException(status_code=404, detail="Item not found")
+        else:
+            raise HTTPException(status_code=404, detail="Item not found")
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при получении пользователя:")
+        print(error)
+        return error
 
 
 def createCurator(user: User):
@@ -313,7 +308,7 @@ def check_user_firm_relation(userId: int):
     cursor.close()
     db.close()
     print(existing_record)
-    return {'userId': existing_record[0], 'firm_name': existing_record[1], 'projects': existing_record[2],
+    return {'firm_number': existing_record[0], 'firm_name': existing_record[1], 'projects': existing_record[2],
             'profile': existing_record[3]}
 
 
@@ -343,3 +338,39 @@ def attach_user_to_firm(userData: JoinTheCompanyClass):
     db.close()
 
     return True
+
+
+def getUserSessions(userId: int):
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        cursor = db.cursor()
+
+        sql = f"SELECT ufp.id_user,  f.number, f.name, f.session_id, p.id_profile " \
+              f"FROM usertofirmtoprofile ufp " \
+              f"JOIN profile p ON p.id_profile = ufp.id_profile " \
+              f"JOIN firm f ON f.id_firm = ufp.id_firm " \
+              f"WHERE id_user = '{userId}';"
+        cursor.execute(sql)
+        results = cursor.fetchall()
+
+        db.commit()
+        sessions = []
+        for result in results:
+            session = {"id_user": result[0],
+                       "firm_number": result[1],
+                       "firm_name": result[2],
+                       "session_id": result[3],
+                       "id_profile": result[4],
+                       }
+            sessions.append(session)
+        return sessions
+
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при получении смен:")
+        print(error)
+        return error

@@ -1,30 +1,35 @@
-from Models.models import Role, Task, CreateBoard, Board, TaskPriority, CreateBoardList
+from Models.models import CreateBoard, Board, TaskPriority, CreateBoardList, Task, CreateTask, UpdateTask
 import mysql.connector
 
 from controllers.users import getStudentsInFirms
 
 
 def getTaskPriorities():
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="eois"
-    )
-    cursor = db.cursor()
-    sql = f"SELECT id, name, color FROM taskpriority"
-    cursor.execute(sql)
-    results = cursor.fetchall()
-    priorities = []
-    for result in results:
-        priority = TaskPriority(id=result[0], name=result[1], color=result[2])
-        priorities.append(priority)
-    cursor.close()
-    db.close()
-    return priorities
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        cursor = db.cursor()
+        sql = f"SELECT id, name, color FROM taskpriority"
+        cursor.execute(sql)
+        results = cursor.fetchall()
+        priorities = []
+        for result in results:
+            priority = TaskPriority(id=result[0], name=result[1], color=result[2])
+            priorities.append(priority)
+        cursor.close()
+        db.close()
+        return priorities
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при получении приоритетов задач:")
+        print(error)
+        return error
 
 
-def getBoards(idFirm: int):
+def getBoards(idFirm: list[int]):
     try:
         db = mysql.connector.connect(
             host="localhost",
@@ -37,7 +42,7 @@ def getBoards(idFirm: int):
               f"FROM board b " \
               f"JOIN boardtofirm b1 ON b.id = b1.idBoard " \
               f"JOIN firm f ON b1.idFirm = f.id_firm " \
-              f"WHERE f.id_firm = {idFirm}"
+              f"WHERE f.id_firm IN ({','.join(map(str, idFirm))})"
         cursor.execute(sql)
         results = cursor.fetchall()
         boards = []
@@ -48,7 +53,7 @@ def getBoards(idFirm: int):
         db.close()
         return boards
     except mysql.connector.Error as error:
-        print("Произошла ошибка при получении досок:")
+        print("Произошла ошибка при получении проектов:")
         print(error)
         return error
 
@@ -84,6 +89,34 @@ def createBoard(board: CreateBoard):
         return error
 
 
+def editBoard(board: Board):
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        # Создание объекта курсора
+        cursor = db.cursor()
+        # SQL запрос для вставки данных проекта в таблицу
+        sql = f"UPDATE eois.board " \
+              f"SET name = '{board.name}', description = '{board.description}', coverColor = '{board.coverColor}' " \
+              f"WHERE id = {board.id};"
+        # Выполнение SQL запроса
+        cursor.execute(sql)
+        # Подтверждение изменений в базе данных
+        db.commit()
+        # Закрытие соединения с базой данных
+        cursor.close()
+        db.close()
+        return board.id
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при редактировании доски:")
+        print(error)
+        return error
+
+
 def createColumn(column: CreateBoardList):
     try:
         db = mysql.connector.connect(
@@ -114,33 +147,39 @@ def createColumn(column: CreateBoardList):
 
 
 def getTasksOnBoard(boardId: int):
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="eois"
-    )
+    try:
 
-    cursor = db.cursor(dictionary=True)
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
 
-    # Получаем информацию о доске
-    cursor.execute("SELECT * FROM eois.board WHERE id = %s", (boardId,))
-    board_info = cursor.fetchone()
+        cursor = db.cursor(dictionary=True)
 
-    # Получаем все списки для данной доски
-    cursor.execute("SELECT * FROM eois.list WHERE idBoard = %s", (boardId,))
-    lists = cursor.fetchall()
+        # Получаем информацию о доске
+        cursor.execute("SELECT * FROM eois.board WHERE id = %s", (boardId,))
+        board_info = cursor.fetchone()
 
-    # Для каждого списка получаем задачи без сортировки по параметру serialNumber
-    for l in lists:
-        cursor.execute("SELECT * FROM eois.task WHERE idList = %s", (l["id"],))
-        tasks = cursor.fetchall()
-        l["tasksOnList"] = tasks
+        # Получаем все списки для данной доски
+        cursor.execute("SELECT * FROM eois.list WHERE idBoard = %s", (boardId,))
+        lists = cursor.fetchall()
 
-    cursor.close()
-    db.close()
+        # Для каждого списка получаем задачи без сортировки по параметру serialNumber
+        for l in lists:
+            cursor.execute("SELECT * FROM eois.task WHERE idList = %s", (l["id"],))
+            tasks = cursor.fetchall()
+            l["tasksOnList"] = tasks
 
-    return {"board_info": board_info, "lists": lists}
+        cursor.close()
+        db.close()
+
+        return {"board_info": board_info, "lists": lists}
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при получении задач:")
+        print(error)
+        return error
 
 
 def getExecutors(firmId: int):
@@ -275,3 +314,126 @@ def moveList(column_id: int, new_serial_number: int):
         print(error)
         return False
 
+
+def deleteBoard(boardID: int):
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        cursor = db.cursor()
+        print(f'-----------\n{boardID}\n-----------')
+        # Удаление самой доски
+        cursor.execute("DELETE FROM board WHERE id = %s", (boardID,))
+
+        db.commit()
+
+        return True
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при удалении доски:")
+        print(error)
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+
+def createTask(task: CreateTask):
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        # Создание объекта курсора
+        cursor = db.cursor(dictionary=True)
+
+        # Получение последнего serialNumber для idList
+        sql = "SELECT serialNumber FROM eois.task WHERE idList = %s ORDER BY serialNumber DESC LIMIT 1;"
+        cursor.execute(sql, (task.idList,))
+        lastTask = cursor.fetchone()
+
+        lastTaskSerialNumber = lastTask['serialNumber'] if lastTask else 0
+
+        newTaskSerialNumber = lastTaskSerialNumber + 1
+
+        # SQL запрос для вставки данных задачи в таблицу
+        sql = (
+            "INSERT INTO eois.task (name, discription, idList, creationDateTime, priority, deadLine, isDone, serialNumber) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s);")
+        task_data = (task.name, task.description, task.idList, task.creationDateTime, task.priority, task.deadline, 0,
+                     newTaskSerialNumber)
+
+        # Выполнение SQL запроса
+        cursor.execute(sql, task_data)
+
+        # Получение id созданной задачи
+        task_id = cursor.lastrowid
+
+        for e in task.executors:
+            sql = (
+                "INSERT INTO eois.executor (idUser, idTask) VALUES (%s, %s);")
+            task_data = (e, task_id)
+            cursor.execute(sql, task_data)
+
+        # Подтверждение изменений в базе данных
+        db.commit()
+
+        # Закрытие соединения с базой данных
+        cursor.close()
+        db.close()
+
+        return task_id
+
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при создании задачи:")
+        print(error)
+        return None
+
+
+def updateTask(task: UpdateTask):
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+
+        # Создание объекта курсора
+        cursor = db.cursor()
+
+        # SQL запрос для обновления данных задачи в таблице
+        sql = ("UPDATE eois.task "
+               "SET name = %s, discription = %s, "
+               "priority = %s, deadLine = %s "
+               "WHERE id = %s;")
+        task_data = (task.name, task.description, task.priority, task.deadline, task.id)
+
+        # Выполнение SQL запроса
+        cursor.execute(sql, task_data)
+
+        # Получение id созданной задачи
+        task_id = cursor.lastrowid
+
+        for e in task.executors:
+            sql = ("INSERT INTO eois.executor (idUser, idTask) VALUES (%s, %s);")
+            task_data = (e, task_id)
+            cursor.execute(sql, task_data)
+
+        # Подтверждение изменений в базе данных
+        db.commit()
+
+        # Закрытие соединения с базой данных
+        cursor.close()
+        db.close()
+
+        return task.id
+
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при редактировании задачи:")
+        print(error)
+        return None

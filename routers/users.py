@@ -4,7 +4,8 @@ import os
 
 from Models.models import User, changeLoginPasswordClass, JoinTheCompanyClass, FirmIds, ProfileId, UserId
 from controllers.users import getAllStudents, getAllCurators, createCurator, createStudent, getUserById, \
-    changeLoginPassword, getStudentsInFirms, getCuratorsByProfile, check_user_firm_relation, attach_user_to_firm
+    changeLoginPassword, getStudentsInFirms, getCuratorsByProfile, check_user_firm_relation, attach_user_to_firm, \
+    getUserSessions
 
 router = APIRouter()
 
@@ -75,4 +76,7 @@ def checkUserFirmRelation(userData: UserId):
     user = check_user_firm_relation(userData.userId)
     return user
 
-
+@router.post('/getUserSessions', tags=["User"])
+def get_User_Sessions(userData: UserId):
+    sessions = getUserSessions(userData.userId)
+    return sessions

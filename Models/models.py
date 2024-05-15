@@ -11,6 +11,7 @@ class Project(BaseModel):
     descriptionProject: str
     direction: int
 
+
 class CreateProject(BaseModel):
     nameProject: str
     descriptionProject: str
@@ -178,11 +179,14 @@ class Board(BaseModel):
     description: str
     coverColor: str
 
+
 class BoardId(BaseModel):
     boardId: int
 
+
 class FirmId(BaseModel):
     firmId: int
+
 
 class CreateBoard(BaseModel):
     name: str
@@ -203,6 +207,7 @@ class CreateBoardList(BaseModel):
     idBoard: int
     serialNumber: int
 
+
 class Task(BaseModel):
     id: int
     name: str
@@ -210,9 +215,29 @@ class Task(BaseModel):
     idList: int
     serialNumber: int
     creationDateTime: datetime
-    status: int
     deadline: datetime
     isDone: bool
+    priority: int
+
+
+class CreateTask(BaseModel):
+    name: str
+    description: str
+    idList: int
+    creationDateTime: datetime
+    deadline: datetime
+    priority: int
+    executors: List[int]
+
+
+class UpdateTask(BaseModel):
+    id: int
+    name: str
+    description: str
+    deadline: datetime
+    isDone: bool
+    priority: int
+    executors: List[int]
 
 
 class TaskPriority(BaseModel):
@@ -238,10 +263,12 @@ class Route(BaseModel):
     path: str
     name: str
 
+
 class MoveTask(BaseModel):
     taskId: int
     newListId: int
     newSerialNumber: int
+
 
 class MoveList(BaseModel):
     columnId: int

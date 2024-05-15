@@ -117,23 +117,34 @@ def checkToken(token: str):
 
 
 def getMenu(userId: int):
-    # Подключение к базе данных MySQL
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="eois"
-    )
-    cursor = db.cursor()
-    cursor.execute(
-        f'SELECT r.id, r.name FROM usertoroute u JOIN routes r ON u.id_route = r.id WHERE u.id_user = {userId};')
-    results = cursor.fetchall()
-    if results:
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="eois"
+        )
+        cursor = db.cursor()
+
+        cursor.execute(
+            f'SELECT r.id, r.name FROM roletoroute rr '
+            f'JOIN routes r ON rr.id_route = r.id '
+            f'JOIN role ro ON ro.id = rr.id_role '
+            f'JOIN user u ON u.id_user = {userId} '
+            f'WHERE ro.id = u.role;'
+        )
+        results = cursor.fetchall()
+
         routeIds = []
         for result in results:
             routeId = {'id': result[0],
                        'name': result[1]}
             routeIds.append(routeId)
+
         cursor.close()
         db.close()
         return routeIds
+    except mysql.connector.Error as error:
+        print("Произошла ошибка при получении меню:")
+        print(error)
+        return error

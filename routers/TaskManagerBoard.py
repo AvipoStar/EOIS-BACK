@@ -1,7 +1,8 @@
 from fastapi import APIRouter
-from Models.models import CreateBoard, FirmId, MoveTask, CreateBoardList, MoveList
+from Models.models import CreateBoard, FirmId, MoveTask, CreateBoardList, MoveList, FirmIds, BoardId, Board, CreateTask, \
+    Task, UpdateTask
 from controllers.TaskMenagerBoard import getBoards, createBoard, getTasksOnBoard, getTaskPriorities, getExecutors, \
-    moveTask, createColumn, moveList
+    moveTask, createColumn, moveList, deleteBoard, editBoard, createTask, updateTask
 
 router = APIRouter()
 
@@ -12,15 +13,20 @@ def get_Task_Priorities():
     return tasks
 
 
-@router.get('/getBoards/{idFirm}', tags=["TaskManager"])
-def get_Boards(idFirm: int):
-    boards = getBoards(idFirm)
+@router.post('/getBoards', tags=["TaskManager"])
+def get_Boards(ids: FirmIds):
+    boards = getBoards(ids.firmIds)
     return boards
 
 
 @router.post('/createBoard', tags=["TaskManager"])
 def create_Board(board: CreateBoard):
     boardId = createBoard(board)
+    return boardId
+
+@router.patch('/editBoard', tags=["TaskManager"])
+def edit_Board(board: Board):
+    boardId = editBoard(board)
     return boardId
 
 
@@ -52,3 +58,19 @@ def move_Task(moveData: MoveTask):
 def move_List(moveData: MoveList):
     success = moveList(moveData.columnId, moveData.newSerialNumber)
     return success
+
+
+@router.delete('/deleteBoard', tags=["TaskManager"])
+def delete_board(board: BoardId):
+    result = deleteBoard(board.boardId)
+    return result
+
+@router.post('/createTask', tags=["TaskManager"])
+def create_task(task: CreateTask):
+    result = createTask(task)
+    return result
+
+@router.patch('/updateTask', tags=["TaskManager"])
+def update_ask(task: UpdateTask):
+    result = updateTask(task)
+    return result
