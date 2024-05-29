@@ -57,30 +57,34 @@ def loginFunc(login: str, password: str):
         password="",
         database="eois"
     )
+
     cursor = db.cursor()
     cursor.execute("SELECT id_user, password FROM user WHERE login = %s", (login,))
     result = cursor.fetchone()
-
     if result:
         user_id, stored_password = result
-        cursor.execute("SELECT token_value FROM token WHERE id_user = %s", (user_id,))
-        existing_token = cursor.fetchone()
-
-        if existing_token:
-            token = existing_token[0]
+        if password != stored_password:
             db.close()
-            return {"token": token, "user_id": user_id}
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный пароль")
         else:
-            if password == stored_password:
+            cursor.execute("SELECT token_value FROM token WHERE id_user = %s", (user_id,))
+            existing_token = cursor.fetchone()
+
+            print(f"existing_token {existing_token}")
+
+            if existing_token == None:
                 token, expiration_date = generate_token()
                 cursor.execute("INSERT INTO token (id_user, token_value, create_time) VALUES (%s, %s, %s)",
                                (user_id, token, datetime.now()))
                 db.commit()
                 db.close()
                 return {"token": token, "user_id": user_id}
+
             else:
+                token = existing_token[0]
                 db.close()
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный пароль")
+                return {"token": token, "user_id": user_id}
+
     else:
         db.close()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")

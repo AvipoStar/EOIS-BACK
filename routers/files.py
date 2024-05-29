@@ -17,10 +17,11 @@ def calculate_file_hash(file_content):
 
 @router.post("/uploadUserPhoto", tags=["Files"])
 async def upload_user_photo(file: UploadFile = File(...)):
-   result = await uploadUserPhoto(file)
-   return result
+    result = await uploadUserPhoto(file)
+    return result
+
 
 @router.post("/uploadTaskmanagerFiles", tags=["Files"])
 async def upload_taskmanager_file(file: UploadFile = File(...)):
-   result = await uploadTaskmanagerFile(file)
-   return result
+    result = await uploadTaskmanagerFile(file)
+    return result

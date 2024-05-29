@@ -83,7 +83,7 @@ def getCuratorsByProfile(profileIds: List[int], search_query: str = None):
     return {"curators": users}
 
 
-def getAllStudents():
+def getAllStudents(search: str):
     # Подключение к базе данных MySQL
     db = mysql.connector.connect(
         host="localhost",
@@ -91,20 +91,25 @@ def getAllStudents():
         password="",
         database="eois"
     )
-
     # Создание объекта курсора
     cursor = db.cursor()
 
-    # SQL запрос для выборки всех проектов
-    sql = "SELECT * FROM user WHERE role = 2;"
-
-    # Выполнение SQL запроса
-    cursor.execute(sql)
+    if search:
+        # SQL запрос для поиска по заданным полям
+        sql = "SELECT * FROM user WHERE role = 2 AND " \
+              "(name LIKE '%{}%' OR surname LIKE '%{}%' OR patronymic LIKE '%{}%')" \
+            .format(search, search, search)
+        # Выполнение SQL запроса с параметрами поиска
+        cursor.execute(sql)
+    else:
+        # SQL запрос для выборки всех проектов
+        sql = "SELECT * FROM user WHERE role = 2;"
+        # Выполнение SQL запроса
+        cursor.execute(sql)
 
     # Получение результатов запроса
     results = cursor.fetchall()
     users = []
-
     for result in results:
         user = User(id=result[0],
                     name=result[1],
@@ -222,12 +227,14 @@ def createCurator(user: User):
         password="",
         database="eois"
     )
+    print(f"user: {user}\n")
     # Создание объекта курсора
     cursor = db.cursor()
     # SQL запрос для вставки данных пользователя в таблицу
-    sql = "INSERT INTO user (name, surname, patronymic, age, role, login, password, profile) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+    sql = "INSERT INTO user (name, surname, patronymic, gender, bornDate, role, login, password, profile) " \
+          "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
     # Значения для вставки в запрос
-    values = (user.name, user.surname, user.patronymic, user.age, 1, user.login, user.password, user.profileId)
+    values = (user.name, user.surname, user.patronymic, user.gender, user.bornDate, 1, user.login, user.password, user.profileId)
     # Выполнение SQL запроса
     cursor.execute(sql, values)
     # Подтверждение изменений в базе данных

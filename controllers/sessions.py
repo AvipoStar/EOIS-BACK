@@ -1,10 +1,9 @@
-from Models.models import Session
+from Models.models import Session, CreateSession
 import mysql.connector
 from datetime import datetime
 
 
 def getSessions(search_string: str):
-    print(f'search_string "{search_string}" search_string')
     # Подключение к базе данных MySQL
     db = mysql.connector.connect(
         host="localhost",
@@ -39,8 +38,9 @@ def getSessions(search_string: str):
     db.close()
     # Возвращение списка сессий
     return sessions
-def createSessions(session: Session):
-    print(f'session {session}')
+
+
+def createSessions(session: CreateSession):
     db = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -66,3 +66,33 @@ def createSessions(session: Session):
     cursor.close()
     db.close()
     return last_insert_id
+
+
+def editSessions(session: Session):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="eois"
+    )
+    # Создание объекта курсора
+    cursor = db.cursor()
+
+    # SQL запрос для вставки данных проекта в таблицу
+    sql = f'UPDATE eois.session' \
+          f'SET date_start = %s, date_end = %s, place = %s, firm_count = %s' \
+          f'WHERE id = %s;'
+    session_data = (session.dateStart, session.dateEnd, session.place, session.firmCount, session.id)
+
+    # Выполнение SQL запроса
+    cursor.execute(sql, session_data)
+
+    last_update_id = cursor.lastrowid
+
+    # Подтверждение изменений в базе данных
+    db.commit()
+
+    # Закрытие соединения с базой данных
+    cursor.close()
+    db.close()
+    return last_update_id

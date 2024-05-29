@@ -5,6 +5,10 @@ from datetime import datetime, date
 from fastapi import UploadFile, File
 
 
+class Search(BaseModel):
+    search: str
+
+
 class Project(BaseModel):
     id: int = None
     nameProject: str
@@ -75,6 +79,13 @@ class GetFirm(BaseModel):
 
 class Session(BaseModel):
     id: int = None
+    dateStart: date = None
+    dateEnd: date = None
+    place: str = None
+    firmCount: int = None
+
+
+class CreateSession(BaseModel):
     dateStart: date = None
     dateEnd: date = None
     place: str = None

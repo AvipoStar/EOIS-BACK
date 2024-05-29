@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, UploadFile
 from starlette.responses import JSONResponse
 import os
 
-from Models.models import User, changeLoginPasswordClass, JoinTheCompanyClass, FirmIds, ProfileId, UserId
+from Models.models import User, changeLoginPasswordClass, JoinTheCompanyClass, FirmIds, ProfileId, UserId, Search
 from controllers.users import getAllStudents, getAllCurators, createCurator, createStudent, getUserById, \
     changeLoginPassword, getStudentsInFirms, getCuratorsByProfile, check_user_firm_relation, attach_user_to_firm, \
     getUserSessions
@@ -10,9 +10,9 @@ from controllers.users import getAllStudents, getAllCurators, createCurator, cre
 router = APIRouter()
 
 
-@router.get('/getAllStudents', tags=["User"])
-def get_All_Students():
-    users = getAllStudents()
+@router.post('/getAllStudents', tags=["User"])
+def get_All_Students(search: Search):
+    users = getAllStudents(search.search)
     return users
 
 
@@ -75,6 +75,7 @@ def attachUserToFirm(userData: JoinTheCompanyClass):
 def checkUserFirmRelation(userData: UserId):
     user = check_user_firm_relation(userData.userId)
     return user
+
 
 @router.post('/getUserSessions', tags=["User"])
 def get_User_Sessions(userData: UserId):
